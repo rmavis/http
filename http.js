@@ -1,4 +1,4 @@
-/* FETCH
+/* HTTP
  *
  * This is a simple object for making HTTP requests.
  *
@@ -12,15 +12,15 @@
  * EXAMPLES
  *
  * This:
- * Fetch.get({ url: "http://example.com",
- *             params: {foo:"bar", boo:"bat"},
- *             callback: handler });
+ * Http.get({ url: "http://example.com",
+ *            params: {foo:"bar", boo:"bat"},
+ *            callback: handler });
  * will generate the request:
  * GET http://example.com?foo=bar&boo=bat
  * and pass the response to function `handler`.
  */
 
-var Fetch = (function () {
+var Http = (function () {
 
     var conf = {
         url: null,
@@ -52,7 +52,7 @@ var Fetch = (function () {
 
 
 
-    function http() {
+    function makeRequest() {
         var xhr = (window.XMLHttpRequest)
             ? (new XMLHttpRequest())
             : (new ActiveXObject("Microsoft.XMLHTTP"));
@@ -120,14 +120,14 @@ var Fetch = (function () {
         get: function(obj) {
             init(obj);
             conf.method = 'get';
-            http();
+            makeRequest();
         },
 
 
         post: function(obj) {
             init(obj);
             conf.method = 'post';
-            http();
+            makeRequest();
         }
     };
 })();
