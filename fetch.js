@@ -1,6 +1,6 @@
 /* FETCH
  *
- * This is an object for making HTTP requests.
+ * This is a simple object for making HTTP requests.
  *
  * The public methods indicate the HTTP verb that will be used
  * when they are called. They can receive the same parameter,
@@ -61,12 +61,11 @@ var Fetch = (function () {
             if (conf.params) {
                 // console.log('GETting ' + conf.url + '?' + toParamString(conf.params));
                 xhr.open(conf.method, conf.url + '?' + toParamString(conf.params));
-                xhr.send();
             } else {
                 // console.log('GETting ' + conf.url);
                 xhr.open(conf.method, conf.url);
-                xhr.send();
             }
+            xhr.send();
         }
 
         else if (conf.method == 'post') {
@@ -83,7 +82,7 @@ var Fetch = (function () {
         }
 
         else {
-            //             console.log("Unsupported HTTP verb: " + conf.method);
+            // console.log("Unsupported HTTP verb: " + conf.method);
         }
 
         var handler = wrapup.bind(this);
