@@ -74,7 +74,7 @@ var Http = (function () {
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             if (conf.params) {
                 // console.log('POSTting ' + toParamString(conf.params) + ' to ' + conf.url);
-                xhr.send(conf.params);
+                xhr.send(toParamString(conf.params));
             } else {
                 // console.log('POSTting nothing to ' + conf.url);
                 xhr.send();
