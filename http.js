@@ -2,11 +2,17 @@
  *
  * This is a simple object for making HTTP requests.
  *
- * The public methods indicate the HTTP verb that will be used
- * when they are called. They can receive the same parameter,
- * which is an object that should have the pertinent key-value
- * pairs as represented by the conf variable, less the `method`
- * key, which will be filled by the method.
+ * The names of the public methods indicate the HTTP verb that will
+ * be used when they are called. They can receive the same parameter,
+ * which is an object containing the keys
+ * - url: the URL you want to request
+ * - params: the data you want to pass to the URL
+ * - callback: the function you want to receive the response
+ *
+ * For logging, you can also include a `verbose` key in the object.
+ * If that is true, then messages will be printed to the console
+ * through the lifecycle of the procedure. Alternatively, you can
+ * set the `verbose` variable to true.
  *
  *
  * EXAMPLES
@@ -17,26 +23,51 @@
  *            callback: handler });
  * will generate the request:
  * GET http://example.com?foo=bar&boo=bat
- * and pass the response to function `handler`.
+ * and pass the response to the function `handler`.
  */
 
 var Http = (function () {
 
+    // Make this true to see console messages.
+    var verbose = false;
+
+
+    // The parameter to the public methods has this shape
+    // except the `method` key, which gets filled in.
     var conf = {
-        url: null,
-        method: null,
-        params: null,
-        callback: null
+        url: null,       // Required.
+        params: null,    // Optional.
+        callback: null,  // Optional. Recommended.
+        verbose: null,   // Optional. Defaults to the above.
+        method: null     // Filled by public method.
     };
 
 
 
-    function init(obj) {
+    function init(obj, verb) {
+        conf.verbose = (obj.hasOwnProperty('verbose')) ? obj.verbose : verbose;
+
+        log("Initializing '" + verb + "' call to http with:");
+        log(obj);
+
         for (var key in obj) {
             if ((obj.hasOwnProperty(key)) &&
                 (conf.hasOwnProperty(key))) {
+                log("Filling conf key '" + key + "' with value '" + obj[key] + "'.");
                 conf[key] = obj[key];
             }
+        }
+
+        if (conf.url) {
+            conf.method = verb;
+            makeRequest();
+            // reset() is called in wrapup()
+            // which is called in makeRequest()
+            // so everything happens in order.
+        }
+        else {
+            log("Aborting: no URL.");
+            reset();
         }
     }
 
@@ -45,6 +76,7 @@ var Http = (function () {
     function reset() {
         for (var key in conf) {
             if (conf.hasOwnProperty(key)) {
+                log("Resetting conf key '" + key + "' to null.");
                 conf[key] = null;
             }
         }
@@ -59,10 +91,10 @@ var Http = (function () {
 
         if (conf.method == 'get') {
             if (conf.params) {
-                // console.log('GETting ' + conf.url + '?' + toParamString(conf.params));
+                log('GETting ' + conf.url + '?' + toParamString(conf.params));
                 xhr.open(conf.method, conf.url + '?' + toParamString(conf.params));
             } else {
-                // console.log('GETting ' + conf.url);
+                log('GETting ' + conf.url);
                 xhr.open(conf.method, conf.url);
             }
             xhr.send();
@@ -73,23 +105,25 @@ var Http = (function () {
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             if (conf.params) {
-                // console.log('POSTting ' + toParamString(conf.params) + ' to ' + conf.url);
+                log('POSTing ' + toParamString(conf.params) + ' to ' + conf.url);
                 xhr.send(toParamString(conf.params));
             } else {
-                // console.log('POSTting nothing to ' + conf.url);
+                log('POSTing nothing to ' + conf.url);
                 xhr.send();
             }
         }
 
         else {
-            // console.log("Unsupported HTTP verb: " + conf.method);
+            log("Unsupported HTTP verb: " + conf.method);
         }
 
-        var handler = wrapup.bind(this);
-
         xhr.onreadystatechange = function() {
-            if ((xhr.readyState == 4) && (xhr.status == 200)) {
-                handler(xhr.responseText);
+            if (xhr.readyState == 4) {
+                if (xhr.responseText) {
+                    wrapup(xhr.responseText);
+                } else {
+                    wrapup();
+                }
             }
         };
     }
@@ -97,15 +131,43 @@ var Http = (function () {
 
 
     function wrapup(response) {
+        log("Received response: " + response);
+
         if (conf.callback) {
-            // console.log("Sending " + response + " to " + conf.callback);
+            log("Sending response to " + conf.callback);
             conf.callback(response);
         }
         else {
-            // console.log("No callback");
+            log("No callback.");
         }
 
         reset();
+    }
+
+
+
+    function toParamString(obj) {
+        var ret = '';
+
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                ret +=
+                    encodeURIComponent(key) +
+                    '=' +
+                    encodeURIComponent(obj[key]) +
+                    '&';
+            }
+        }
+
+        return ret.substr(0, (ret.length - 1));
+    }
+
+
+
+    function log(message) {
+        if (conf.verbose) {
+            console.log(message);
+        }
     }
 
 
@@ -118,16 +180,11 @@ var Http = (function () {
 
     return {
         get: function(obj) {
-            init(obj);
-            conf.method = 'get';
-            makeRequest();
+            init(obj, 'get');
         },
 
-
         post: function(obj) {
-            init(obj);
-            conf.method = 'post';
-            makeRequest();
+            init(obj, 'post');
         }
     };
 })();
