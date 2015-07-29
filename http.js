@@ -97,6 +97,7 @@ var Http = (function () {
                 log('GETting ' + conf.url);
                 xhr.open(conf.method, conf.url);
             }
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
             xhr.send();
         }
 
