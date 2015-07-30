@@ -61,13 +61,12 @@ var Http = (function () {
         if (conf.url) {
             conf.method = verb;
             makeRequest();
-            // reset() is called in wrapup()
+            // reset() is called in handleReturn()
             // which is called in makeRequest()
             // so everything happens in order.
         }
         else {
             log("Aborting: no URL.");
-            reset();
         }
     }
 
@@ -121,9 +120,9 @@ var Http = (function () {
         xhr.onreadystatechange = function() {
             if (xhr.readyState == 4) {
                 if (xhr.responseText) {
-                    wrapup(xhr.responseText);
+                    handleReturn(xhr.responseText);
                 } else {
-                    wrapup();
+                    handleReturn();
                 }
             }
         };
@@ -131,7 +130,7 @@ var Http = (function () {
 
 
 
-    function wrapup(response) {
+    function handleReturn(response) {
         log("Received response: " + response);
 
         if (conf.callback) {
