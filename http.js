@@ -29,7 +29,7 @@
 var Http = (function () {
 
     // Make this true to see console messages.
-    var verbose = false;
+    var verbose = null;
 
 
     // The parameter to the public methods has this shape
@@ -92,7 +92,8 @@ var Http = (function () {
             if (conf.params) {
                 log('GETting ' + conf.url + '?' + toParamString(conf.params));
                 xhr.open(conf.method, conf.url + '?' + toParamString(conf.params));
-            } else {
+            }
+            else {
                 log('GETting ' + conf.url);
                 xhr.open(conf.method, conf.url);
             }
@@ -107,7 +108,8 @@ var Http = (function () {
             if (conf.params) {
                 log('POSTing ' + toParamString(conf.params) + ' to ' + conf.url);
                 xhr.send(toParamString(conf.params));
-            } else {
+            }
+            else {
                 log('POSTing nothing to ' + conf.url);
                 xhr.send();
             }
@@ -121,7 +123,8 @@ var Http = (function () {
             if (xhr.readyState == 4) {
                 if (xhr.responseText) {
                     handleReturn(xhr.responseText);
-                } else {
+                }
+                else {
                     handleReturn();
                 }
             }
