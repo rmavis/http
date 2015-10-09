@@ -35,19 +35,21 @@
 var Http = (function () {
 
     // For logging.
-    var verbose = false;
+    var verbose = true;
 
     // Whether to send the callback the URL along with the response.
     // If true, it will be the second parameter.
     var send_url_to_callback = true;
 
-    // This correlates a URL with its callback function for calling
-    // after the request is made.
+    // This correlates a URL with its request object for properly
+    // calling its callback after the request is made.
     var async_keep = { };
 
     // This is the shape of the argument passed to one of the public
     // methods. Each key is required for each request. If a key is
     // missing, it will be filled with the value specified here.
+    // The other keys required by `makeRequest` will be filled by
+    // the `prep(Get|Post)Args` methods.
     var proto_req = {
         url: null,                       // Required.
         params: null,                    // Optional.
@@ -58,7 +60,9 @@ var Http = (function () {
 
 
 
-    function makeRequestObject(args, verb) {
+    function makeRequestObject(args) {
+        verbose = (args.hasOwnProperty('verbose') && args.verbose) ? true : verbose;
+
         var req_obj = { };
 
         for (var key in proto_req) {
@@ -78,32 +82,51 @@ var Http = (function () {
 
                     req_obj[key] = proto_req[key];
                 }
-
             }
         }
-
-        if (verbose) {
-            console.log("Filling request HTTP verb with '"+verb+"'.");
-        }
-
-        req_obj.verb = verb;
 
         return req_obj;
     }
 
 
 
-    // The args are filled by the user.
-    // The verb is filled by the public function.
-    function init(args, verb) {
-        verbose = (args.hasOwnProperty('verbose')) ? args.verbose : verbose;
+    function prepGetArgs(args) {
+        var req_obj = makeRequestObject(args);
 
+        req_obj.verb = 'get';
+
+        req_obj.open_url = (req_obj.params)
+            ? req_obj.url + '?' + toParamString(req_obj.params)
+            : req_obj.url;
+
+        req_obj.send_val = null;
+
+        return req_obj;
+    }
+
+
+
+    function prepPostArgs(args) {
+        var req_obj = makeRequestObject(args);
+
+        req_obj.verb = 'post';
+        req_obj.open_url = req_obj.url;
+        req_obj.send_val = (req_obj.params)
+            ? toParamString(req_obj.params)
+            : null;
+
+        return req_obj;
+    }
+
+
+
+    // The public methods will pass a prepared package of arguments
+    // representing the request.
+    function init(req_obj) {
         if (verbose) {
-            console.log("Initializing '"+verb+"' call to http with:");
-            console.log(args);
+            console.log("Initializing '"+req_obj.verb+"' call to http with:");
+            console.log(req_obj);
         }
-
-        var req_obj = makeRequestObject(args, verb);        
 
         if (req_obj.url) {
             makeRequest(req_obj);
@@ -118,62 +141,29 @@ var Http = (function () {
 
 
     function makeRequest(req_obj) {
+        if (verbose) {
+            console.log('Making ' + req_obj.verb + ' request to ' + req_obj.open_url);
+        }
+
         async_keep[req_obj.url] = req_obj;
 
         var xhr = (window.XMLHttpRequest)
             ? (new XMLHttpRequest())
             : (new ActiveXObject("Microsoft.XMLHTTP"));
 
-        if (req_obj.verb == 'get') {
-            if (req_obj.params) {
-                if (verbose) {
-                    console.log('GETting ' + req_obj.url + '?' + toParamString(req_obj.params));
-                }
+        xhr.open(req_obj.verb, req_obj.open_url);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
-                xhr.open(req_obj.verb, req_obj.url + '?' + toParamString(req_obj.params));
-            }
-
-            else {
-                if (verbose) {
-                    console.log('GETting ' + req_obj.url);
-                }
-
-                xhr.open(req_obj.verb, req_obj.url);
-            }
-
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        if (req_obj.send_val) {
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            xhr.send(req_obj.send_val);
+        }
+        else {
             xhr.send();
         }
 
-        else if (req_obj.verb == 'post') {
-            xhr.open(req_obj.verb, req_obj.url);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-
-            if (req_obj.params) {
-                if (verbose) {
-                    console.log('POSTing ' + toParamString(req_obj.params) + ' to ' + req_obj.url);
-                }
-
-                xhr.send(toParamString(req_obj.params));
-            }
-            else {
-                if (verbose) {
-                    console.log('POSTing nothing to ' + req_obj.url);
-                }
-
-                xhr.send();
-            }
-        }
-
-        else {
-            if (verbose) {
-                console.log("Unsupported HTTP verb: " + req_obj.verb);
-            }
-        }
-
         xhr.onreadystatechange = function() {
-            if (xhr.readyState == 4) {
+            if (xhr.readyState === 4) {
                 if (xhr.responseText) {
                     handleReturn(req_obj.url, xhr.responseText);
                 }
@@ -192,7 +182,7 @@ var Http = (function () {
         }
 
         if (async_keep[url]) {
-            if (typeof async_keep[url].callback == 'function') {
+            if (typeof async_keep[url].callback === 'function') {
                 if (verbose) {
                     console.log("Sending response to callback function.");
                 }
@@ -201,7 +191,7 @@ var Http = (function () {
                     async_keep[url].callback(response, url);
                 }
                 else {
-                    async_keep[url](response);
+                    async_keep[url].callback(response);
                 }
             }
 
@@ -246,12 +236,12 @@ var Http = (function () {
      */
 
     return {
-        get: function(obj) {
-            init(obj, 'get');
+        get: function(args) {
+            init(prepGetArgs(args));
         },
 
-        post: function(obj) {
-            init(obj, 'post');
+        post: function(args) {
+            init(prepPostArgs(args));
         }
     };
 })();
