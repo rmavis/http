@@ -35,7 +35,7 @@
 var Http = (function () {
 
     // For logging.
-    var verbose = true;
+    var verbose = false;
 
     // Whether to send the callback the URL along with the response.
     // If true, it will be the second parameter.
