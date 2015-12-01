@@ -53,6 +53,7 @@ var Http = (function () {
     var proto_req = {
         url: null,                       // Required.
         params: null,                    // Optional.
+        raw_data: null,                  // Optional.
         callback: null,                  // Recommended.
         send_url: send_url_to_callback,  // Optional.
         verbose: verbose                 // Optional.
@@ -92,7 +93,6 @@ var Http = (function () {
 
     function prepGetArgs(args) {
         var req_obj = makeRequestObject(args);
-
         req_obj.verb = 'get';
 
         req_obj.open_url = (req_obj.params)
@@ -106,14 +106,23 @@ var Http = (function () {
 
 
 
+    // If POSTing data using a FormData object, then that object
+    // should be passed to `Http` with the `raw_data` key.
     function prepPostArgs(args) {
         var req_obj = makeRequestObject(args);
 
         req_obj.verb = 'post';
         req_obj.open_url = req_obj.url;
-        req_obj.send_val = (req_obj.params)
-            ? toParamString(req_obj.params)
-            : null;
+
+        if (req_obj.params) {
+            req_obj.send_val = toParamString(req_obj.params);
+        }
+        else if (req_obj.raw_data) {
+            req_obj.send_val = req_obj.raw_data;
+        }
+        else {
+            req_obj.send_val = null;
+        }
 
         return req_obj;
     }
@@ -143,6 +152,8 @@ var Http = (function () {
     function makeRequest(req_obj) {
         if (verbose) {
             console.log('Making ' + req_obj.verb + ' request to ' + req_obj.open_url);
+            console.log('And sending:');
+            console.log(req_obj.send_val);
         }
 
         async_keep[req_obj.url] = req_obj;
@@ -155,9 +166,16 @@ var Http = (function () {
         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
         if (req_obj.send_val) {
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            // This is not necessary when sending a FormData object.
+            // FormData should be passed to `Http` with the `raw_data` key,
+            // with no `params`.
+            if (req_obj.params) {
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            }
+
             xhr.send(req_obj.send_val);
         }
+
         else {
             xhr.send();
         }
