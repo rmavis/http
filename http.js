@@ -91,9 +91,12 @@ var Http = (function () {
 
 
 
-    function prepGetArgs(args) {
+    function prepGetArgs(args, verb) {
+        verb = (typeof verb == 'string') ? verb : 'get';
+
         var req_obj = makeRequestObject(args);
-        req_obj.verb = 'get';
+
+        req_obj.verb = verb;
 
         req_obj.open_url = (req_obj.params)
             ? req_obj.url + '?' + toParamString(req_obj.params)
@@ -108,10 +111,12 @@ var Http = (function () {
 
     // If POSTing data using a FormData object, then that object
     // should be passed to `Http` with the `raw_data` key.
-    function prepPostArgs(args) {
+    function prepPostArgs(args, verb) {
+        verb = (typeof verb == 'string') ? verb : 'post';
+
         var req_obj = makeRequestObject(args);
 
-        req_obj.verb = 'post';
+        req_obj.verb = verb;
         req_obj.open_url = req_obj.url;
 
         if (req_obj.params) {
@@ -258,8 +263,16 @@ var Http = (function () {
             init(prepGetArgs(args));
         },
 
+        delete: function(args) {
+            init(prepGetArgs(args, 'delete'));
+        },
+
         post: function(args) {
             init(prepPostArgs(args));
+        },
+
+        put: function(args) {
+            init(prepPostArgs(args, 'put'));
         }
     };
 })();
