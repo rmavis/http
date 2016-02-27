@@ -46,6 +46,11 @@ As with `GET` and `DELETE`, a `PUT` request is nearly identical to a
 `POST` request.
 
 
+## Dependencies
+
+None.
+
+
 ## Details
 
 The names of the public methods indicate the HTTP verb that will
