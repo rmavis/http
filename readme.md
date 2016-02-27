@@ -9,7 +9,7 @@ Currently-supported HTTP methods:
 - DELETE
 
 
-# Usage
+## Usage
 
 This:
 ```
@@ -46,7 +46,7 @@ As with `GET` and `DELETE`, a `PUT` request is nearly identical to a
 `POST` request.
 
 
-# Details
+## Details
 
 The names of the public methods indicate the HTTP verb that will
 be used. They can all take the same parameter, which is an object
