@@ -63,3 +63,11 @@ containing these keys:
 - `headers`, being an object representing key-value pairs to send
   as headers with the request
 - `verbose`, for logging
+
+To send values with a `GET` or `DELETE` request, use the `params`
+key. For `POST` or `PUT`, the key used will determine which
+`Content-Type` header will be added and how the values will be
+modified prior to making the request. If the key is `json`, then
+that header will be set to `application/json;charset=UTF-8` and
+the object will be `stringify`'d. If the key is `raw_data`, then
+the object will not be modified before sending it.
